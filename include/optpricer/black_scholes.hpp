@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 #include <stdexcept>
 #include "optpricer/normal.hpp"
@@ -21,6 +22,14 @@ namespace optpricer
         double T;     // time to maturity (YEARS)
     };
 
+    inline void validate(const BlackScholesInputs &v)
+    {
+        if (v.S_0 < 0.0 || v.K < 0.0 || v.sigma < 0.0)
+        {
+            throw std::invalid_argument("BlackScholes: S_0, K and sigma must be non-negative");
+        }
+    }
+
     inline double d1(const BlackScholesInputs &v)
     {
         return (std::log(v.S_0 / v.K) + (v.r + v.sigma * v.sigma / 2) * v.T) / (v.sigma * std::sqrt(v.T));
@@ -33,6 +42,19 @@ namespace optpricer
 
     inline double BlackScholesCall(const BlackScholesInputs &v)
     {
+        validate(v);
+
+        if (v.T <= 0.0)
+        {
+            return std::max(v.S_0 - v.K, 0.0);
+        }
+
+        // zero volatility: the underlying grows deterministically to its forward
+        if (v.sigma == 0.0)
+        {
+            return std::max(v.S_0 - v.K * std::exp(-v.r * v.T), 0.0);
+        }
+
         const double D1 = d1(v);
         const double D2 = d2(v);
 
@@ -41,6 +63,19 @@ namespace optpricer
 
     inline double BlackScholesPut(const BlackScholesInputs &v)
     {
+        validate(v);
+
+        if (v.T <= 0.0)
+        {
+            return std::max(v.K - v.S_0, 0.0);
+        }
+
+        // zero volatility: the underlying grows deterministically to its forward
+        if (v.sigma == 0.0)
+        {
+            return std::max(v.K * std::exp(-v.r * v.T) - v.S_0, 0.0);
+        }
+
         const double D1 = d1(v);
         const double D2 = d2(v);
 
