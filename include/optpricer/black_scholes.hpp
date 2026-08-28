@@ -20,6 +20,7 @@ namespace optpricer
         double r;     // risk-free interest rate (continuously compounded)
         double sigma; // volatility of underlying asset
         double T;     // time to maturity (YEARS)
+        double q;     // dividend yield (continuously compounded)
     };
 
     inline void validate(const BlackScholesInputs &v)
@@ -32,7 +33,7 @@ namespace optpricer
 
     inline double d1(const BlackScholesInputs &v)
     {
-        return (std::log(v.S_0 / v.K) + (v.r + v.sigma * v.sigma / 2) * v.T) / (v.sigma * std::sqrt(v.T));
+        return (std::log(v.S_0 / v.K) + (v.r - v.q + v.sigma * v.sigma / 2) * v.T) / (v.sigma * std::sqrt(v.T));
     }
 
     inline double d2(const BlackScholesInputs &v)
@@ -52,13 +53,13 @@ namespace optpricer
         // zero volatility: the underlying grows deterministically to its forward
         if (v.sigma == 0.0)
         {
-            return std::max(v.S_0 - v.K * std::exp(-v.r * v.T), 0.0);
+            return std::max(v.S_0 * std::exp(-v.q * v.T) - v.K * std::exp(-v.r * v.T), 0.0);
         }
 
         const double D1 = d1(v);
         const double D2 = d2(v);
 
-        return v.S_0 * N(D1) - v.K * std::exp(-v.r * v.T) * N(D2);
+        return v.S_0 * std::exp(-v.q * v.T) * N(D1) - v.K * std::exp(-v.r * v.T) * N(D2);
     }
 
     inline double BlackScholesPut(const BlackScholesInputs &v)
@@ -73,13 +74,13 @@ namespace optpricer
         // zero volatility: the underlying grows deterministically to its forward
         if (v.sigma == 0.0)
         {
-            return std::max(v.K * std::exp(-v.r * v.T) - v.S_0, 0.0);
+            return std::max(v.K * std::exp(-v.r * v.T) - v.S_0 * std::exp(-v.q * v.T), 0.0);
         }
 
         const double D1 = d1(v);
         const double D2 = d2(v);
 
-        return v.K * std::exp(-v.r * v.T) * N(-D2) - v.S_0 * N(-D1);
+        return v.K * std::exp(-v.r * v.T) * N(-D2) - v.S_0 * std::exp(-v.q * v.T) * N(-D1);
     }
 
     inline double BlackScholesPrice(const BlackScholesInputs &v, const OptionType t)

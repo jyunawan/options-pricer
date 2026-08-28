@@ -33,7 +33,7 @@ ctest --test-dir build --output-on-failure
 
 const optpricer::BlackScholesInputs v{
     /*S_0*/ 100.0, /*K*/ 100.0, /*r*/ 0.05,
-    /*sigma*/ 0.20, /*T*/ 1.0
+    /*sigma*/ 0.20, /*T*/ 1.0, /*q*/ 0.03
 };
 
 const double c = optpricer::BlackScholesPrice(v, optpricer::OptionType::Call);
@@ -43,17 +43,18 @@ const double c = optpricer::BlackScholesPrice(v, optpricer::OptionType::Call);
 
 Prices at the reference inputs `S₀ = 100, K = 100, r = 0.05, σ = 0.20, T = 1`:
 
-| Quantity | Value |
-|---|---|
-| European call `c` | 10.450583572186 |
-| European put `p` | 5.573526022257 |
+| Quantity | `q = 0` | `q = 0.03` |
+|---|---|---|
+| European call `c` | 10.450583572186 | 8.652528553943 |
+| European put `p` | 5.573526022257 | 6.730917649163 |
 
-Both are asserted to 1e-9 in `tests/test_black_scholes.cpp`, along with the
-intrinsic value returned at expiry (`T = 0`).
+These are asserted to 1e-9 in `tests/test_black_scholes.cpp`, along with the
+intrinsic value returned at expiry (`T = 0`) and the identity that a yield `q`
+equals discounting the spot to `S₀e^(−qT)` and setting `q = 0`.
 
-Put–call parity, `c + Ke^(−rT) = p + S₀`, is checked across a grid of
-`K, r, σ, T` in `tests/test_parity.cpp`, also to 1e-9. Parity is model-free, so
-it is a check on the implementation rather than on the model.
+Put–call parity, `c + Ke^(−rT) = p + S₀e^(−qT)`, is checked across a
+grid of `K, r, σ, T, q` in `tests/test_parity.cpp`, also to 1e-9. Parity is
+model-free, so it is a check on the implementation rather than on the model.
 
 ## Notation
 
@@ -62,6 +63,7 @@ it is a check on the implementation rather than on the model.
 | `S_0` | underlying price today |
 | `K` | strike price |
 | `r` | continuously compounded riskless rate, per year |
+| `q` | continuous dividend yield, per year (may be negative) |
 | `sigma` | volatility, per year |
 | `T` | time to maturity, **in years** |
 | `N(x)` | standard normal CDF |
@@ -74,7 +76,7 @@ All rates and times are annualised, and rates are continuously compounded.
 
 ## Known limitations
 
-- European options only, and no dividend yield. The model assumes a non-dividend-paying underlying.
+- European options only. Dividends are modelled as a continuous yield `q`; discrete cash dividends on known dates are not supported.
 - `apps/price_cli.cpp` is a stub. There is no command-line interface yet.
 - `S_0 = K = 0` gives NaN (IEEE arithmetic makes `S_0 = 0` or `K = 0` alone work correctly, but not both at once).
 
