@@ -1,7 +1,6 @@
+#pragma once
 #include <cmath>
 #include <numbers>
-#ifndef NORMAL_HPP
-#define NORMAL_HPP
 
 /**
  * \file normal.hpp
@@ -28,4 +27,3 @@ namespace optpricer
     }
 }
 
-#endif

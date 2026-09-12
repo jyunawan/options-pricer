@@ -10,6 +10,7 @@ add_executable(optpricer_tests
   test_black_scholes.cpp
   test_parity.cpp
   test_greeks.cpp
+  test_payoff.cpp
 )
 target_link_libraries(optpricer_tests PRIVATE optpricer Catch2::Catch2WithMain)
 target_compile_options(optpricer_tests PRIVATE ${OPTPRICER_WARNING_FLAGS})

@@ -1,9 +1,8 @@
+#pragma once
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
 #include "optpricer/normal.hpp"
-#ifndef BLACK_SCHOLES_HPP
-#define BLACK_SCHOLES_HPP
 
 /**
  * \file black_scholes.hpp
@@ -211,4 +210,3 @@ namespace optpricer
     }
 
 }
-#endif

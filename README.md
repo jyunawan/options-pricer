@@ -8,8 +8,8 @@ A study of the numerical methods in derivatives pricing, based on Hull's *Option
 Milestones:
 - [x] **0 — Project skeleton.** CMake, header-only `INTERFACE` target, Catch2 via `FetchContent`.
 - [x] **1 — Normal CDF and Black–Scholes closed form.**
-- [ ] 2 — Analytic Greeks (delta, gamma, vega, theta, rho)
-- [ ] 3 — Payoff abstraction (payoffs separated from engines)
+- [x] **2 — Analytic Greeks (delta, gamma, vega, theta, rho).**
+- [x] **3 — Payoff abstraction (payoffs separated from engines).**
 - [ ] 4 — Binomial tree (CRR; European and American)
 - [ ] 5 — Monte Carlo (antithetic and control variates)
 - [ ] 6 — Implied volatility (bracketed Newton–Raphson)
@@ -37,6 +37,21 @@ const optpricer::BlackScholesInputs v{
 };
 
 const double c = optpricer::BlackScholesPrice(v, optpricer::OptionType::Call);
+const double delta = optpricer::BlackScholesDelta(v, optpricer::OptionType::Call);
+```
+
+Payoffs are function objects, independent of any pricing engine:
+
+```cpp
+#include "optpricer/payoff.hpp"
+
+const optpricer::CallPayoff call{100.0};
+call(110.0); // 10.0
+
+optpricer::PortfolioPayoff straddle;
+straddle.add(1.0, optpricer::CallPayoff{100.0});
+straddle.add(1.0, optpricer::PutPayoff{100.0});
+straddle(90.0); // 10.0
 ```
 
 ## Verification
@@ -55,6 +70,24 @@ equals discounting the spot to `S₀e^(−qT)` and setting `q = 0`.
 Put–call parity, `c + Ke^(−rT) = p + S₀e^(−qT)`, is checked across a
 grid of `K, r, σ, T, q` in `tests/test_parity.cpp`, also to 1e-9. Parity is
 model-free, so it is a check on the implementation rather than on the model.
+
+Greeks at the same reference inputs (`q = 0`):
+
+| Greek | Call | Put |
+|---|---|---|
+| delta | 0.636830651176 | -0.363169348824 |
+| gamma | 0.018762017346 | same |
+| vega | 37.524034691 | same |
+| theta | -6.414027546 | -1.657880424 |
+| rho | 53.232481545 | -41.890460904 |
+
+`tests/test_greeks.cpp` asserts these, checks every Greek against a central
+finite difference of the pricer across a grid of inputs, and pins the call and
+put formulas against each other via the derivatives of put–call parity.
+
+`tests/test_payoff.cpp` checks each payoff's value either side of the strike,
+the binary decomposition `max(S − K, 0) = AON(S) − K · CON(S)` pointwise, and
+`PortfolioPayoff` against hand-written straddle, strangle and spread payoffs.
 
 ## Notation
 
@@ -83,4 +116,4 @@ All rates and times are annualised, and rates are continuously compounded.
 ## Disclaimer
 
 I used an AI assistant while building this, mainly to explain concepts I was
-learning and to sanity-check my work against the textbook. The design decisions and code are mine
+learning and to sanity-check my work against the textbook, as well as to write the docs including this README. The design decisions and code are mine.
